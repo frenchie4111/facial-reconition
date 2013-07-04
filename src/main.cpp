@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "lyonsSDL.h"
 
 using namespace std;
 
@@ -20,6 +21,9 @@ int main( int argc, char **argv )
 
     SDL_Surface* screen = SDL_SetVideoMode(1280, 720, 16, SDL_HWSURFACE|SDL_DOUBLEBUF/*|SDL_FULLSCREEN*/);
 
+	SDL_Surface* test_png = IMG_Load( "1.png" );
+	apply_surface( 50, 50, test_png, screen );
+
 	bool done = false;
     while (!done)
     {
@@ -30,6 +34,8 @@ int main( int argc, char **argv )
 			{
 				done = true;
 			}
-		}
+		}			
+
+		SDL_Flip( screen );
     }
 } // main

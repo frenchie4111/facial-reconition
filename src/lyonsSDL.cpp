@@ -56,6 +56,7 @@ SDL_Surface *load_image( std::string filename )
 
     return optimizedImage;
 }
+
 SDL_Surface *load_image( std::string filename, bool optimize)
 {
     SDL_Surface* loadedImage = NULL;

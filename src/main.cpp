@@ -5,15 +5,10 @@
 #define cimg_using_png
 #include "CImg.h"
 
+#include "blob.h"
+
 #define THRESHHOLD (20) // For now
 
-typedef struct pixel {
-	int x;
-	int y;
-	int r;
-	int g;
-	int b;
-} pixel;
 
 using namespace cimg_library;
 using namespace std;

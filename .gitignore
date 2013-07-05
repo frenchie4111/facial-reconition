@@ -2,6 +2,7 @@
 *.jpg
 *.bmp
 main
+freq
 bin/
 bin/*
 *.tmp

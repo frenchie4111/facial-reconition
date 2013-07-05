@@ -6,3 +6,5 @@ freq
 bin/
 bin/*
 *.tmp
+*.sublime-project
+*.sublime-workspace

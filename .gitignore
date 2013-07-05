@@ -1,4 +1,7 @@
 *.png
+*.jpg
+*.bmp
 main
 bin/
 bin/*
+*.tmp

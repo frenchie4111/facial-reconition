@@ -1,10 +1,11 @@
 #include <iostream>
 #include <vector>
+#include <deque>
 #include <stdlib.h>
-
+#define cimg_using_png
 #include "CImg.h"
 
-#define THRESHHOLD (10) // For now
+#define THRESHHOLD (20) // For now
 
 typedef struct pixel {
 	int x;
@@ -15,6 +16,7 @@ typedef struct pixel {
 } pixel;
 
 using namespace cimg_library;
+using namespace std;
 
 pixel new_pixel( int nx, int ny, int nr, int ng, int nb )
 {
@@ -27,9 +29,9 @@ pixel new_pixel( int nx, int ny, int nr, int ng, int nb )
 	return new_pixel;
 }
 
-pixel new_pixel( int x, int y, CImg<unsigned char> image )
+pixel new_pixel( int x, int y, CImg<unsigned char> *image )
 {
-	return new_pixel( x, y, image(0,0,1,1), image(0,0,1,2), image(0,0,1,3) );
+	return new_pixel( x, y, image->operator()(x,y,0,0), image->operator()(x,y,0,1), image->operator()(x,y,0,2) );
 }
 
 int color_difference( pixel p1, pixel p2 )
@@ -41,19 +43,33 @@ int color_difference( pixel p1, pixel p2 )
 	return difference;
 }
 
-std::vector<pixel> neighbors( pixel p, int height, int width )
+std::vector<pixel> find_neighbors( pixel p, CImg<unsigned char> *image )
 {
-	bool xlb = ( p.x > 0 );
-	bool xub = ( p.x < width );
-	bool ylb = ( p.y > 0 );
-	bool yub = ( p.y < height ):
+	bool xlb = ( p.x >= 1 );
+	bool xub = ( p.x < ( image->width() - 1 ) );
+	bool ylb = ( p.y >= 1 );
+	bool yub = ( p.y < ( image->height() - 1 ) );
 
 	std::vector< pixel > new_neighbors;
 
 	if( xlb )
 	{
-		new_neighbors.push_back( new_pixel(
+		new_neighbors.push_back( new_pixel( p.x-1, p.y, image ) );
 	}
+	if( xub )
+	{
+		new_neighbors.push_back( new_pixel( p.x+1, p.y, image ) );
+	}
+	if( ylb )
+	{
+		new_neighbors.push_back( new_pixel( p.x, p.y-1, image ) );
+	}
+	if( yub )
+	{
+		new_neighbors.push_back( new_pixel( p.x, p.y+1, image ) );
+	}
+
+	return new_neighbors;
 }
 
 void print_pixel( pixel p )
@@ -61,15 +77,73 @@ void print_pixel( pixel p )
 	printf( "[(%d, %d) R%d G%d B%d]", p.x, p.y, p.r, p.g, p.b );
 }
 
-void find_blob( pixel current, CImg<unsigned char> image, CImg<unsigned char> visited, std::vector<pixel> *blob )
+bool is_visited( pixel p, CImg<unsigned char> *visited )
 {
+	if( visited->operator()( p.x, p.y, 0, 1 ) == 255 )
+	{
+		return true;
+	}
+	return false;
+}
+
+vector<pixel> find_blob( pixel starting, CImg<unsigned char> *image, CImg<unsigned char> *visited, pixel vcolor )
+{
+	// Create a blob to return, and add the first one to it
+	vector<pixel> blob;
+	blob.push_back( starting );
+
+	// Add our first pixel to the line
+	deque<pixel> queue;
+	queue.push_back( starting );
+
+
+	// While there is still things in line
+	while( queue.size() > 0 )
+	{
+		// Get the next up
+		pixel current = queue.front(); 
+		queue.pop_front();
+
+		// Make sure we haven't already visited it
+		if ( !is_visited( current, visited ) )
+		{
+			// Add it to the visited list
+			visited->operator()( current.x, current.y, 0, 0 ) = vcolor.r;
+			visited->operator()( current.x, current.y, 0, 1 ) = vcolor.g;
+			visited->operator()( current.x, current.y, 0, 2 ) = vcolor.b;
+
+			// Find it's neighbors
+			vector<pixel> neighbors = find_neighbors( current, image );
+			// Loop through them
+			for ( int i = 0; i < neighbors.size(); i++ )
+			{
+				// If we haven't visisted it
+				if( !is_visited( neighbors[i], visited ) )
+				{
+					// Check if it's under our threshhold
+					if( color_difference( current, neighbors[i] ) <= THRESHHOLD )
+					{
+						// Add it to the queue
+						queue.push_back( neighbors[i] );
+						// Add it to the visisted bitmap
+						blob.push_back( neighbors[i] );
+					}
+				}
+			}
+		}
+	}
+	return blob;
 }
 
 int main( int argc, char **argv ) 
 {
-	CImg<unsigned char> image("1.png");
+	CImg<unsigned char> image("2.jpg");
 
 	CImg<unsigned char> visited(image.width(), image.height(), 1, 3, 0);
+	
+	int tx = 19, ty = 19;
+
+	printf( "%d, %d, %d \n", image( tx, ty, 0, 0 ), image( tx, ty, 0, 1 ), image( tx, ty, 0, 2) );
 
 	std::vector< std::vector<pixel> > blobs;
 
@@ -77,19 +151,24 @@ int main( int argc, char **argv )
 	{
 		for( int y = 0; y < image.height(); y++ )
 		{
-			pixel starting_pixel = new_pixel( x, y, image(0,0,1,1), image(0,0,1,2), image(0,0,1,3) );
-
 			if( visited( x, y, 1, 1 ) == 0 ) {
-				std::vector<pixel> new_blob;
-				new_blob.push_back( starting_pixel );
+				// Create a pixel for this location
+				pixel starting_pixel = new_pixel( x, y, &image );
 
-				find_blob( starting_pixel, image, visited, &new_blob );
+				// Create a random color for our bitmap (TESTING)
+				pixel vcolor;
+				vcolor.r = rand()%255;
+				vcolor.g = 255;
+				vcolor.b = rand()%255;
+// vector<pixel> find_blob( pixel starting, CImg<unsigned char> *image, CImg<unsigned char> *visisted, pixel vcolor )
+
+				vector<pixel> new_blob = find_blob( starting_pixel, &image, &visited, vcolor );
 
 				blobs.push_back( new_blob );
 			}
 		}
 	}
-
+#if 0
 	for( int b = 0; b < blobs.size(); b++ )
 	{
 		for( int p = 0; p < blobs[b].size(); p++ )
@@ -98,6 +177,9 @@ int main( int argc, char **argv )
 		}
 		printf( "\n" );
 	}
+	printf( "Number of blobs: %d\n", blobs.size() );
+#endif
+	visited.save("out.bmp");
 
 	CImgDisplay main_display(image, "Main Display");
 	CImgDisplay blob_display(visited, "Blob Display");

@@ -10,6 +10,9 @@ Blob::Blob()
 	xlb = 32766;
 	yub = 0;
 	ylb = 32766;
+	xaverage = 0;
+	yaverage = 0;
+	count = 0;
 }
 
 void Blob::add_pixel( Pixel pixel )
@@ -31,6 +34,9 @@ void Blob::add_pixel( Pixel pixel )
 	{
 		ylb = pixel.y;
 	}
+	xaverage = ((float)((xaverage * count) + pixel.x)) / ((float)(count + 1));
+	yaverage = ((float)((yaverage * count) + pixel.y)) / ((float)(count + 1));
+	count++;
 }
 
 Blob Blob::find_blob( Pixel starting, CImg<unsigned char> *image, CImg<unsigned char> *visited, Pixel vcolor, int threshhold )
@@ -89,12 +95,11 @@ Blob Blob::find_blob( Pixel starting, CImg<unsigned char> *image, CImg<unsigned 
 	return blob;
 }
 
-std::vector<Blob> Blob::find_all_blobs( CImg<unsigned char> image, int threshhold )
+std::vector<Blob> Blob::find_all_blobs( CImg<unsigned char> image, int threshhold, CImg<unsigned char> *visited )
 {
 	// Create a visited bitmap, this will serve two purposes:
 	// 		1 - Stop us from backtracking when finding blobs
 	//		2 - Give us a visual representation of our blobs
-	CImg<unsigned char> visited(image.width(), image.height(), 1, 3, 0);
 	
 	// Initialize our vector of blobs to eventually return
 	std::vector< Blob > blobs;
@@ -103,7 +108,7 @@ std::vector<Blob> Blob::find_all_blobs( CImg<unsigned char> image, int threshhol
 	{
 		for( int y = 0; y < image.height(); y++ )
 		{
-			if( visited( x, y, 1, 1 ) == 0 ) {
+			if( visited->operator()( x, y, 1, 1 ) == 0 ) {
 				// Create a pixel for this location
 				Pixel starting_pixel( x, y, &image );
 
@@ -113,16 +118,17 @@ std::vector<Blob> Blob::find_all_blobs( CImg<unsigned char> image, int threshhol
 				vcolor.g = rand()%253 + 1;
 				vcolor.b = rand()%253 + 1;
 
-				Blob new_blob = Blob::find_blob( starting_pixel, &image, &visited, vcolor, threshhold );
-
-				blobs.push_back( new_blob );
+				Blob new_blob = Blob::find_blob( starting_pixel, &image, visited, vcolor, threshhold );
+				printf("BROKED\n");
+				if( new_blob.count > 100 )
+				{
+					blobs.push_back( new_blob );
+					printf("Blob Count: %d\n", blobs.size());
+				}
 			}
 		}
 	}
 
-	visited.save("out.bmp");
-	CImgDisplay vis_disp( visited, "Visited Display" );
-	while( !vis_disp.is_closed() );
 	return blobs;
 }
 
@@ -160,4 +166,36 @@ bool Blob::is_visited( Pixel p, CImg<unsigned char> *visited )
 	p.print();
 	printf("\n");
 	return false;
+}
+
+void Blob::ensquare( CImg<unsigned char> *image )
+{
+	Pixel tl( xlb, ylb, image );
+	Pixel bl( xlb, yub, image );
+	Pixel tr( xub, ylb, image );
+	Pixel br( xub, yub, image );
+	for( int x = tl.x; x < tr.x; x++ )
+	{
+		image->operator()( x, tl.y, 0, 0 ) = 255;
+		image->operator()( x, tl.y, 0, 1 ) = 255;
+		image->operator()( x, tl.y, 0, 2 ) = 255;
+
+		image->operator()( x, bl.y, 0, 0 ) = 255;
+		image->operator()( x, bl.y, 0, 1 ) = 255;
+		image->operator()( x, bl.y, 0, 2 ) = 255;
+	}
+
+	for( int y = tl.y; y < bl.y; y++ )
+	{
+		image->operator()( tl.x, y, 0, 0 ) = 255;
+		image->operator()( tl.x, y, 0, 1 ) = 255;
+		image->operator()( tl.x, y, 0, 2 ) = 255;
+
+		image->operator()( tr.x, y, 0, 0 ) = 255;
+		image->operator()( tr.x, y, 0, 1 ) = 255;
+		image->operator()( tr.x, y, 0, 2 ) = 255;
+	}
+	image->operator()( xaverage, yaverage, 0, 0) = 255;
+	image->operator()( xaverage, yaverage, 0, 1) = 255;
+	image->operator()( xaverage, yaverage, 0, 2) = 255;
 }

@@ -42,3 +42,10 @@ void Pixel::print()
 {
 	printf( "[(%d, %d) R%d G%d B%d]", x, y, r, g, b );
 }
+
+void Pixel::draw( CImg<unsigned char> *image )
+{
+	image->operator()( x, y, 0, 0 ) = r;
+	image->operator()( x, y, 0, 1 ) = g;
+	image->operator()( x, y, 0, 2 ) = b;
+}

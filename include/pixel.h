@@ -20,6 +20,7 @@ class Pixel {
 
 		int difference_from( Pixel other );
 		void print();
+		void draw( cimg_library::CImg<unsigned char> *image );
 };
 
 #endif

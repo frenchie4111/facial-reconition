@@ -34,6 +34,7 @@ void Blob::add_pixel( Pixel pixel )
 	{
 		ylb = pixel.y;
 	}
+
 	xaverage = ((float)((xaverage * count) + pixel.x)) / ((float)(count + 1));
 	yaverage = ((float)((yaverage * count) + pixel.y)) / ((float)(count + 1));
 	count++;
@@ -56,9 +57,6 @@ Blob Blob::find_blob( Pixel starting, CImg<unsigned char> *image, CImg<unsigned 
 		// Get the next up
 		Pixel current = queue.front(); 
 		queue.pop_front();
-
-		current.print();
-		printf("\n");
 
 		// Make sure we haven't already visited it
 		// We do this here incase we somehow got to here
@@ -95,7 +93,7 @@ Blob Blob::find_blob( Pixel starting, CImg<unsigned char> *image, CImg<unsigned 
 	return blob;
 }
 
-std::vector<Blob> Blob::find_all_blobs( CImg<unsigned char> image, int threshhold, CImg<unsigned char> *visited )
+std::vector<Blob> Blob::find_all_blobs( CImg<unsigned char> image, int threshhold, int size_threshhold, CImg<unsigned char> *visited )
 {
 	// Create a visited bitmap, this will serve two purposes:
 	// 		1 - Stop us from backtracking when finding blobs
@@ -119,16 +117,13 @@ std::vector<Blob> Blob::find_all_blobs( CImg<unsigned char> image, int threshhol
 				vcolor.b = rand()%253 + 1;
 
 				Blob new_blob = Blob::find_blob( starting_pixel, &image, visited, vcolor, threshhold );
-				printf("BROKED\n");
-				if( new_blob.count > 100 )
+				if( new_blob.count > size_threshhold )
 				{
 					blobs.push_back( new_blob );
-					printf("Blob Count: %d\n", blobs.size());
 				}
 			}
 		}
 	}
-
 	return blobs;
 }
 
@@ -162,11 +157,10 @@ bool Blob::is_visited( Pixel p, CImg<unsigned char> *visited )
 	{
 		return true;
 	}
-	printf("not visited: ");
-	p.print();
-	printf("\n");
 	return false;
 }
+
+// MARK: Blob Drawing Functions
 
 void Blob::ensquare( CImg<unsigned char> *image )
 {
@@ -198,4 +192,44 @@ void Blob::ensquare( CImg<unsigned char> *image )
 	image->operator()( xaverage, yaverage, 0, 0) = 255;
 	image->operator()( xaverage, yaverage, 0, 1) = 255;
 	image->operator()( xaverage, yaverage, 0, 2) = 255;
+
+	image->operator()( xaverage+1, yaverage, 0, 0) = 255;
+	image->operator()( xaverage+1, yaverage, 0, 1) = 255;
+	image->operator()( xaverage+1, yaverage, 0, 2) = 255;
+
+	image->operator()( xaverage+1, yaverage+1, 0, 0) = 255;
+	image->operator()( xaverage+1, yaverage+1, 0, 1) = 255;
+	image->operator()( xaverage+1, yaverage+1, 0, 2) = 255;
+
+	image->operator()( xaverage, yaverage+1, 0, 0) = 255;
+	image->operator()( xaverage, yaverage+1, 0, 1) = 255;
+	image->operator()( xaverage, yaverage+1, 0, 2) = 255;
+}
+
+void Blob::draw( CImg<unsigned char> *image )
+{
+	for( int i = 0; i < pixels.size(); i++ )
+	{
+		pixels[i].draw( image );
+	}
+}
+
+// MARK: Blob math code
+
+float Blob::get_x_skewness()
+{
+	float rel_x_avg = xaverage - (float)xlb;
+	float width = abs( (float)xlb - (float)xub );
+	float center = width/2;
+	float center_dist = abs(rel_x_avg - center);
+	return center_dist / center;
+}
+
+float Blob::get_y_skewness()
+{
+	float rel_y_avg = yaverage - (float)ylb;
+	float width = abs( (float)ylb - (float)yub );
+	float center = width/2;
+	float center_dist = abs(rel_y_avg - center);
+	return center_dist / center;
 }

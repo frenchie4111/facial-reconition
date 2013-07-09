@@ -106,7 +106,8 @@ std::vector<Blob> Blob::find_all_blobs( CImg<unsigned char> image, int threshhol
 	{
 		for( int y = 0; y < image.height(); y++ )
 		{
-			if( visited->operator()( x, y, 1, 1 ) == 0 ) {
+			if( Blob::is_visited( Pixel( x, y, 0, 0, 0 ), visited ) ) {
+				printf("not vis\n");                  
 				// Create a pixel for this location
 				Pixel starting_pixel( x, y, &image );
 
@@ -232,4 +233,9 @@ float Blob::get_y_skewness()
 	float center = width/2;
 	float center_dist = abs(rel_y_avg - center);
 	return center_dist / center;
+}
+
+float Blob::get_skewness()
+{
+	return (get_y_skewness() + get_y_skewness()) / 2;
 }

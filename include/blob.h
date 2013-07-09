@@ -31,6 +31,7 @@ class Blob
 		// MARK: Blob math code
 		float get_x_skewness();
 		float get_y_skewness();
+		float get_skewness();
 };
 
 #endif

@@ -29,7 +29,7 @@ int main( int argc, char **argv )
 	for( int i = 0; i < blobs.size(); i++ )
 	{
 		printf("blob# %d: skewed: %f\n", i, blobs[i].get_x_skewness());
-		if( blobs[i].pixels.size() > 100 && blobs[i].get_x_skewness() < .3f )
+		if( blobs[i].pixels.size() > 100 && blobs[i].get_skewness() < .25f )
 		{
 			blobs[i].ensquare( &visited );
 			blobs[i].draw( &blobsImg );
